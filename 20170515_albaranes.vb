@@ -22,7 +22,7 @@ Private Sub Workbook_Open()
         If id_tecnico <> "id_tecnico" Then
              Set remplazar = CreateObject("Scripting.Dictionary")
              'hacemos una copia de la plantilla'
-             copiarHoja PLANTILLA_RESUMIDA, id_tecnico & "exp", HOJA_EXP
+             copiarHoja PLANTILLA_RESUMIDA, id_tecnico & "-exp", HOJA_EXP
              posicion_principal = calcularPrimeraPosicion(HOJA_EXP, "A:A", id_tecnico)
              posicion_final = calcularUltimaPosicion(HOJA_EXP, "A:A", id_tecnico)
              'Anadimos las variables que han de sustituirse en elbaran'
@@ -31,7 +31,7 @@ Private Sub Workbook_Open()
              remplazar.Add "[%id_expedicion%]", Worksheets(HOJA_EXP).Cells(posicion_principal, 3)
              'remplazamos las variables del albaran creado'
              For Each r In remplazar
-                remplazarCadenas id_tecnico & "exp", r, remplazar(r)
+                remplazarCadenas id_tecnico & "-exp", r, remplazar(r)
              Next r
              'obtenemos el rango de servicios en la expedicion'
              Set servicios_expedicion = Worksheets(HOJA_EXP).Range("D" & posicion_principal, "P" & posicion_final)
@@ -45,27 +45,24 @@ Private Sub Workbook_Open()
                    'ultimo campo(observaciones) debajo del servicio para ganar espacio'
                    If servicios_expedicion.Columns.Count = j Then
                        fila = fila + 1
-                       Worksheets(id_tecnico & "exp").Cells(fila, 2) = "Obs:"
-                       Worksheets(id_tecnico & "exp").Cells(fila, 3) = servicios_expedicion.Cells(i, j)
-                       Worksheets(id_tecnico & "exp").Range(Cells(fila, 3), Cells(fila, servicios_expedicion.Columns.Count)).Merge
-                       With Worksheets(id_tecnico & "exp").Range(Cells(fila, 2), Cells(fila, servicios_expedicion.Columns.Count)).Borders(xlEdgeBottom)
+                       Worksheets(id_tecnico & "-exp").Cells(fila, 2) = "Obs:"
+                       Worksheets(id_tecnico & "-exp").Cells(fila, 3) = servicios_expedicion.Cells(i, j)
+                       Worksheets(id_tecnico & "-exp").Range(Cells(fila, 3), Cells(fila, servicios_expedicion.Columns.Count)).Merge
+                       With Worksheets(id_tecnico & "-exp").Range(Cells(fila, 2), Cells(fila, servicios_expedicion.Columns.Count)).Borders(xlEdgeBottom)
                         .LineStyle = xlContinuous
                         .Weight = xlThin
                         .ColorIndex = 1
                         End With
                    Else
-                       Worksheets(id_tecnico & "exp").Cells(fila, celda) = servicios_expedicion.Cells(i, j)
+                       Worksheets(id_tecnico & "-exp").Cells(fila, celda) = servicios_expedicion.Cells(i, j)
                    End If
                    celda = celda + 1
                 Next j
                 fila = fila + 1
              Next i
              'Crear PDF'
-             exportarPdf id_tecnico & "exp", RUTA_FICHEROS
-             'encriptamos el pdf con zip'
-             'encryptFile RUTA_FICHEROS, id_tecnico & "exp"
-             'Enviar Mail'
-             'enviarMail Worksheets(CONFIGURABLES).Cells(calcularPrimeraPosicion(CONFIGURABLES, "A:A", id_tecnico), 2), "Expedicion Medio", "Saludos.", RUTA_FICHEROS & id_tecnico & "exp" & ".zip"
+             exportarPdf id_tecnico & "-exp", RUTA_FICHEROS
+             
             'comprobamos si el tecnico tiene asignada la generacion de albaranes'
             If Worksheets(CONFIGURABLES).Cells(calcularPrimeraPosicion(CONFIGURABLES, "A:A", id_tecnico), 4) = 1 Then
                  posicion_principal = calcularPrimeraPosicion(HOJA_EXP_DET, "A:A", id_tecnico)
@@ -120,6 +117,11 @@ Private Sub Workbook_Open()
                     End If
                  Next pos_servicio
             End If
+        'encriptamos el pdf con zip'
+        encryptFile RUTA_FICHEROS, id_tecnico
+        Application.Wait (Now + TimeValue("0:00:02"))
+        'Enviar Mail'
+        enviarMail Worksheets(CONFIGURABLES).Cells(calcularPrimeraPosicion(CONFIGURABLES, "A:A", id_tecnico), 2), "Expedicion Medio", "Saludos.", RUTA_FICHEROS & id_tecnico & ".zip"
         End If
     Next
 End Sub
@@ -216,7 +218,7 @@ End Sub
 
 Sub encryptFile(ruta_dir, archivo_hoja)
     strDestFileName = ruta_dir & archivo_hoja & ".zip"
-    strSourceFileName = ruta_dir & archivo_hoja & ".pdf"
+    strSourceFileName = ruta_dir & archivo_hoja & "*.pdf"
     str7ZipPath = "C:\Program Files\7-Zip\7z.exe"
     strPassword = "linde"
     strCommand = str7ZipPath & " -p" & strPassword & " a -tzip """ & strDestFileName & """ """ & strSourceFileName & """"
